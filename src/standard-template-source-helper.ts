@@ -190,15 +190,28 @@ export default class StandardTemplateSourceHelper implements TemplateSourceHelpe
         if (!node) {
             return undefined;
         }
+        const isValidTemplate = templateStringSettings.isValidTemplate || (() => false);
         switch (node.kind) {
+            case this.typescript.SyntaxKind.TemplateExpression:
+                if (isValidTemplate(node as ts.TemplateExpression)) {
+                    return node as ts.TemplateExpression;
+                }
+                return undefined;
+
             case this.typescript.SyntaxKind.TaggedTemplateExpression:
-                if (isTagged(node as ts.TaggedTemplateExpression, templateStringSettings.tags)) {
+                if (
+                    isValidTemplate(node as ts.TaggedTemplateExpression)
+                    || isTagged(node as ts.TaggedTemplateExpression, templateStringSettings.tags)
+                ) {
                     return (node as ts.TaggedTemplateExpression).template;
                 }
                 return undefined;
 
             case this.typescript.SyntaxKind.NoSubstitutionTemplateLiteral:
-                if (isTaggedLiteral(this.typescript, node as ts.NoSubstitutionTemplateLiteral, templateStringSettings.tags)) {
+                if (
+                    isValidTemplate(node as ts.NoSubstitutionTemplateLiteral)
+                    || isTaggedLiteral(this.typescript, node as ts.NoSubstitutionTemplateLiteral, templateStringSettings.tags)
+                ) {
                     return node as ts.NoSubstitutionTemplateLiteral;
                 }
                 return undefined;
