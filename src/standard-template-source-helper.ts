@@ -165,7 +165,7 @@ export default class StandardTemplateSourceHelper implements TemplateSourceHelpe
         fileName: string
     ): ReadonlyArray<TemplateContext> {
         const out: TemplateContext[] = [];
-        for (const node of this.helper.getAllNodes(fileName, n => this.getValidTemplateNode(this.templateStringSettings, n) !== undefined)) {
+        for (const node of this.helper.getAllNodes(fileName, n => this.getValidTemplateNode(this.templateStringSettings, n, true) !== undefined)) {
             const validNode = this.getValidTemplateNode(this.templateStringSettings, node);
             if (validNode) {
                 out.push(new StandardTemplateContext(this.typescript, fileName, validNode, this.helper, this.templateStringSettings));
@@ -185,7 +185,8 @@ export default class StandardTemplateSourceHelper implements TemplateSourceHelpe
 
     private getValidTemplateNode(
         templateStringSettings: TemplateSettings,
-        node: ts.Node | undefined
+        node: ts.Node | undefined,
+        isForEach = false,
     ): ts.TemplateLiteral | undefined {
         if (!node) {
             return undefined;
@@ -215,17 +216,21 @@ export default class StandardTemplateSourceHelper implements TemplateSourceHelpe
                     return node as ts.NoSubstitutionTemplateLiteral;
                 }
                 return undefined;
+        }
 
+        if (isForEach) return undefined;
+
+        switch(node.kind) {
             case this.typescript.SyntaxKind.TemplateHead:
                 if (templateStringSettings.enableForStringWithSubstitutions && node.parent && node.parent.parent) {
-                    return this.getValidTemplateNode(templateStringSettings, node.parent.parent);
+                    return this.getValidTemplateNode(templateStringSettings, node.parent) || this.getValidTemplateNode(templateStringSettings, node.parent.parent);
                 }
                 return undefined;
 
             case this.typescript.SyntaxKind.TemplateMiddle:
             case this.typescript.SyntaxKind.TemplateTail:
                 if (templateStringSettings.enableForStringWithSubstitutions && node.parent && node.parent.parent) {
-                    return this.getValidTemplateNode(templateStringSettings, node.parent.parent.parent);
+                    return this.getValidTemplateNode(templateStringSettings, node.parent.parent) || this.getValidTemplateNode(templateStringSettings, node.parent.parent.parent);
                 }
                 return undefined;
 
