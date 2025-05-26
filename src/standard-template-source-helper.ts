@@ -4,7 +4,7 @@
 import * as ts from 'typescript/lib/tsserverlibrary';
 import TemplateSourceHelper from './template-source-helper';
 import ScriptSourceHelper from './script-source-helper';
-import { isTaggedLiteral, isTagged, relative } from './nodes';
+import { isTagged, relative } from './nodes';
 import TemplateContext from './template-context';
 import TemplateSettings from './template-settings';
 import Logger from './logger';
@@ -209,12 +209,14 @@ export default class StandardTemplateSourceHelper implements TemplateSourceHelpe
                 return undefined;
 
             case this.typescript.SyntaxKind.NoSubstitutionTemplateLiteral:
-                if (
-                    isValidTemplate(node as ts.NoSubstitutionTemplateLiteral)
-                    || isTaggedLiteral(this.typescript, node as ts.NoSubstitutionTemplateLiteral, templateStringSettings.tags)
-                ) {
+                if (isValidTemplate(node as ts.NoSubstitutionTemplateLiteral)) {
                     return node as ts.NoSubstitutionTemplateLiteral;
                 }
+
+                if (!isForEach && node.parent) {
+                    return this.getValidTemplateNode(templateStringSettings, node.parent);
+                }
+
                 return undefined;
         }
 
